@@ -29,16 +29,16 @@ struct Piece {
     pos_x: i32,
     pos_y: i32,
     asciiArtTop: String,
-    asciiArtBottom: String
+    isWhite: bool
 }
 
 impl Piece {
-    fn new(pos_x: i32, pos_y: i32) -> Piece {
+    fn new(pos_x: i32, pos_y: i32, isWhite: bool) -> Piece {
         Piece {
             pos_x,
             pos_y,
-            asciiArtTop:    " G ".to_string(),
-            asciiArtBottom: " P ".to_string()
+            asciiArtTop:    "GP".to_string(),
+            isWhite
         }
     }
 }
@@ -56,7 +56,7 @@ impl Board {
             player_w: Player::new("white".to_string()),
             player_b: Player::new("black".to_string()),
             pieces: vec![
-                Piece::new(1, 1)
+                Piece::new(1, 1, true)
             ],
             whitesTurn: true
         }
@@ -89,7 +89,7 @@ impl Board {
 
         // Loop through each row and column:
         for row in 1..17 {
-            if (row % 2 == 0) {
+            if row % 2 == 0 {
                 boardString.push_str("  |")
             } else {
                 boardString.push_str(&format!("{} |", ((row + 1)/2)));
@@ -97,33 +97,42 @@ impl Board {
 
             for col in 1..9 {
                 // Check if there is a piece on this square:
-                let square_x = row / 2;
+                let square_x = (row + 1) / 2;
                 let square_y = col;
                 let potentialPiece: Option<&Piece> = self.checkPosForPiece(square_x, square_y);
                 
                 // Get what color this square is:
-                let XXX_Square: bool = ((((row + 1) / 2) + col) % 2 == 0);
+                let isXXX_Square: bool = (square_x + col) % 2 == 0;
+
+                // Check if potentialPiece actualy found anything:
                 if let Some(piece) = potentialPiece {
                     // Now we know that a piece is in this square:
                     // Now, we need to know if we are in the top or bottom half of the square:
 
                     // If this is the top row
-                    if (row / 2) % 2 == 0 {
+                    if row % 2 != 0 {
+                        // Then first we print what color the piece is:
+                        if piece.isWhite {
+                            boardString.push('W');
+                        } else {
+                            boardString.push('B');
+                        }
+
                         boardString.push_str(piece.asciiArtTop.as_str());
                     } else {
                         // Print an empty bottom of the square:
-                        if XXX_Square {
+                        if isXXX_Square {
                             boardString.push_str("XXX");
                         } else {
-                            boardString.push_str("___");
+                            boardString.push_str("   ");
                         }
                     }
                 } else {
                     // Print an empty checker square:
-                    if XXX_Square {
+                    if isXXX_Square {
                         boardString.push_str("XXX");
                     } else {
-                        boardString.push_str("___");
+                        boardString.push_str("   ");
                     }
                 }
                 boardString.push('|')
@@ -142,6 +151,10 @@ fn main() {
     let mut quit: bool = false;
 
     while !quit {
+        // Clear the screen:
+        print!("\x1B[2J\x1B[3J\x1B[1;1H");
+        io::stdout().flush().unwrap();
+
         // Print board:
         let boardString: String = board.makeBoard();
         println!("{}", boardString);
@@ -155,8 +168,6 @@ fn main() {
         if playerInput.trim() == "q" {
             quit = true;
         }
-
-        
 
         // Switch who's turn it is:
         board.whitesTurn = !board.whitesTurn;
