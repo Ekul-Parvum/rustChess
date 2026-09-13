@@ -3,7 +3,6 @@
 
 use std::io::{self, Write};
 
-
 struct Player {
     color: String
 }
@@ -23,22 +22,59 @@ impl Player {
 
         input
     }
+
+    fn getPieceMovementFromInput(x_movment: &mut i32, y_movment: &mut i32, userInput: String) {
+
+    }
+}
+
+enum PieceType {
+    Knight,
+    Queen,
+    Rook
 }
 
 struct Piece {
     pos_x: i32,
     pos_y: i32,
-    asciiArtTop: String,
-    isWhite: bool
+    isWhite: bool,
+    pieceType: PieceType
 }
 
 impl Piece {
-    fn new(pos_x: i32, pos_y: i32, isWhite: bool) -> Piece {
+    fn new(pos_x: i32, pos_y: i32, isWhite: bool, pieceType: PieceType) -> Piece {
         Piece {
             pos_x,
             pos_y,
-            asciiArtTop:    "GP".to_string(),
-            isWhite
+            isWhite,
+            pieceType
+        }
+    }
+
+    fn getPieceAscii(&self) -> String {
+        match self.pieceType {
+            PieceType::Knight =>    "KN".to_string(),
+            PieceType::Queen =>     "QU".to_string(),
+            PieceType::Rook =>      "RO".to_string(),
+        }
+    }
+
+    fn checkValidMove(&self, new_x: i32, new_y: i32) -> bool {
+        match self.pieceType {
+            PieceType::Queen => {
+                // Check if it is on a row or column.
+                new_x == self.pos_x || new_y == self.pos_y
+
+                // Now, check if it is on a diagonal
+                || ((self.pos_x - new_x).abs() == (self.pos_y - new_y).abs())
+            }
+            PieceType::Rook => {
+                // Check if it is on a row or column.
+                new_x == self.pos_x || new_y == self.pos_y
+            }
+            PieceType::Knight => {
+                true
+            }
         }
     }
 }
@@ -56,7 +92,7 @@ impl Board {
             player_w: Player::new("white".to_string()),
             player_b: Player::new("black".to_string()),
             pieces: vec![
-                Piece::new(1, 1, true)
+                Piece::new(1, 1, true, PieceType::Knight)
             ],
             whitesTurn: true
         }
@@ -87,12 +123,21 @@ impl Board {
     fn makeBoard(&self) -> String {
         let mut boardString: String = String::new();
 
+        /*
+        Note:
+            \x1B[4m - Turns Underlining on
+            \x1B[24m - Turns Underlining off
+         */
+
+        // Print ab..gh markers at the top of the board.
+        println!("\x1B[4m  | h | g | f | e | d | c | b | a |\x1B[24m");
+
         // Loop through each row and column:
         for row in 1..17 {
             if row % 2 == 0 {
-                boardString.push_str("  |")
+                boardString.push_str("\x1B[4m  |")
             } else {
-                boardString.push_str(&format!("{} |", ((row + 1)/2)));
+                boardString.push_str(&format!("\x1B[24m{} |", ((row + 1)/2)));
             }
 
             for col in 1..9 {
@@ -102,7 +147,7 @@ impl Board {
                 let potentialPiece: Option<&Piece> = self.checkPosForPiece(square_x, square_y);
                 
                 // Get what color this square is:
-                let isXXX_Square: bool = (square_x + col) % 2 == 0;
+                let isXXX_Square: bool = (square_x + col) % 2 != 0;
 
                 // Check if potentialPiece actualy found anything:
                 if let Some(piece) = potentialPiece {
@@ -118,11 +163,11 @@ impl Board {
                             boardString.push('B');
                         }
 
-                        boardString.push_str(piece.asciiArtTop.as_str());
+                        boardString.push_str(&piece.getPieceAscii());
                     } else {
                         // Print an empty bottom of the square:
                         if isXXX_Square {
-                            boardString.push_str("XXX");
+                            boardString.push_str("###");
                         } else {
                             boardString.push_str("   ");
                         }
@@ -130,14 +175,14 @@ impl Board {
                 } else {
                     // Print an empty checker square:
                     if isXXX_Square {
-                        boardString.push_str("XXX");
+                        boardString.push_str("###");
                     } else {
                         boardString.push_str("   ");
                     }
                 }
                 boardString.push('|')
             }
-            boardString.push('\n')
+            boardString.push_str("\x1B[24m\n")
         }
 
         boardString
