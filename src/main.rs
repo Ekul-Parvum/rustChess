@@ -22,10 +22,6 @@ impl Player {
 
         input
     }
-
-    fn getPieceMovementFromInput(x_movment: &mut i32, y_movment: &mut i32, userInput: String) {
-
-    }
 }
 
 enum PieceType {
@@ -187,6 +183,58 @@ impl Board {
 
         boardString
     }
+
+    fn getPieceMovementFromInput(&self,
+                                 proposed_x: &mut u32, proposed_y: &mut u32, 
+                                 piece_x: &mut u32, piece_y: &mut u32, 
+                                 userInput: String) {
+        let mut partsOfInput = userInput.split_whitespace();
+
+        let pieceCord = partsOfInput.next();
+        partsOfInput.next();
+        let proposedCord = partsOfInput.next();
+
+        let pieceCordString = pieceCord.unwrap_or("Unknown");
+        let proposedCordString = proposedCord.unwrap_or("Unknown");
+        
+        println!("From {}, to {}.", pieceCordString, proposedCordString);
+        
+        if pieceCordString != "Unknown" && proposedCordString != "Unknown" {
+            // Now to find what square pieceCord and proposedCord indicate.
+            Board::inputNotationIntoCords(pieceCordString.to_string(), piece_y, piece_x);
+            Board::inputNotationIntoCords(proposedCordString.to_string(), proposed_y, proposed_x);
+        }
+    }
+
+    fn inputNotationIntoCords(input: String, row: &mut u32, col: &mut u32) {
+        let mut chars = input.chars();
+        let colChar = chars.next().unwrap_or('0');
+        let rowChar = chars.next().unwrap_or('0');
+
+        let colNum = match colChar {
+            'a' => 8,
+            'b' => 7,
+            'c' => 6,
+            'd' => 5,
+            'e' => 4,
+            'f' => 3,
+            'g' => 2,
+            'h' => 1,
+            '0' => 90,// Invalid
+            _ => 99, // Invalid
+        };
+
+        let rowNum: u32 = rowChar.to_digit(10).unwrap_or(0);
+
+        if (rowNum != 0 && colNum <= 8)
+        {
+            *row = rowNum;  
+            *col = colNum;
+        } else {
+            *row = 0;
+            *col = 0;
+        }
+    }
 }
 
 fn main() {
@@ -204,14 +252,32 @@ fn main() {
         let boardString: String = board.makeBoard();
         println!("{}", boardString);
 
-        // Get playerInput input:
-        let playerInput: String = board.getPlayerInput();
-        print!("{}", playerInput);
-        io::stdout().flush().unwrap();
-        
-        // Check if a player quit:
-        if playerInput.trim() == "q" {
-            quit = true;
+        let mut validInputFound = false;
+        while (!validInputFound) {
+            // Get playerInput input:
+            let playerInput: String = board.getPlayerInput();
+            print!("{}", playerInput);
+            io::stdout().flush().unwrap();
+            
+            // Check if a player quit:
+            if playerInput.trim() == "q" {
+                quit = true;
+                validInputFound = true;
+            } else {
+                let mut piece_x: u32 = 0;
+                let mut piece_y: u32 = 0;
+                let mut proposed_x: u32 = 0;
+                let mut proposed_y: u32 = 0;
+                board.getPieceMovementFromInput(&mut proposed_x, &mut proposed_y, &mut piece_x, &mut piece_y, playerInput);
+
+                println!("Piece: ({}, {}), Proposed: ({}, {})", piece_x, piece_y, proposed_x, proposed_y);
+
+                if (piece_x == 0 || piece_y == 0 || proposed_x == 0 || proposed_y == 0) {
+                    println!("Invalid input. Please try again.");
+                } else {
+                    validInputFound = true;
+                }
+            }
         }
 
         // Switch who's turn it is:
